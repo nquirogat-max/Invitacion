@@ -74,14 +74,13 @@ function App() {
   };
 
   const enviar = async () => {
-    setEnviando(true);
-    setError("");
-
-    try {
-      const respuesta = await emailjs.send(
-        SERVICE_ID,
-        TEMPLATE_ID,
-        {
+   window.open(
+"https://forms.gle/p4zAP5eJ1TBhoDhG6",
+"_blank"
+);
+ 
+setPaso(6);
+};
           title: "Nueva respuesta a la invitación",
 name: "Invitación",
 email: "nquirogat@gmail.com",
