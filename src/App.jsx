@@ -72,41 +72,33 @@ function App() {
     setPaso(5);
   };
 
-  const abrirFormulario = () => {
-    window.location.href = GOOGLE_FORM_URL;
-  };
-
-  if (paso === 1) {
-    return (
-      <Pagina>
-        <Etiqueta texto="TENGO ALGO QUE PREGUNTARTE" />
-        <h1 style={estilos.titulo}>Pregunta importante</h1>
-        <p style={estilos.pregunta}>¿Te gustaría salir conmigo?</p>
-
-        <div style={estilos.zonaBotones}>
-          <button
-            type="button"
-            style={{ ...estilos.botonPrincipal, background: "#16a34a" }}
-            onClick={() => setPaso(2)}
-          >
-            Sí 😊
-          </button>
-
-          <button
-            type="button"
-            onMouseEnter={moverNo}
-            onTouchStart={moverNo}
-            onClick={moverNo}
-            style={{
-              ...estilos.botonNo,
-              transform: `translate(${posicionNo.x}px, ${posicionNo.y}px)`,
-            }}
-          >
-            {mensajesNo[Math.min(intentos, mensajesNo.length - 1)]}
-          </button>
-        </div>
-      </Pagina>
-    );
+  const abrirFormulario = async () => {
+const formData = new FormData();
+ 
+formData.append("entry.1825252071", datos.fecha);
+formData.append("entry.1034162459", datos.hora);
+formData.append("entry.1442532259", datos.comida);
+formData.append(
+"entry.489695332",
+datos.comentario || "Sin comentario"
+);
+ 
+try {
+await fetch(
+"https://docs.google.com/forms/d/e/1FAIpQLSejHaUEvXkmq3vNRFaA7iPwln_Yoa_wcyTEbnJFhFTAbHO11A/formResponse",
+{
+method: "POST",
+mode: "no-cors",
+body: formData,
+}
+);
+ 
+alert("✅ Respuesta enviada correctamente");
+} catch (error) {
+console.error(error);
+alert("❌ Error enviando respuesta");
+}
+};
   }
 
   if (paso === 2) {
