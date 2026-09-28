@@ -1,9 +1,6 @@
 import { useState } from "react";
-import emailjs from "@emailjs/browser";
 
-const SERVICE_ID = "service_afx4r6a";
-const TEMPLATE_ID = "template_ztittaj";
-const PUBLIC_KEY = "2e5GRN4FUhUKjCncf";
+const GOOGLE_FORM_URL = "https://forms.gle/p4zAP5eJ1TBhoDhG6";
 
 const comidas = [
   "Sushi 🍣",
@@ -29,8 +26,6 @@ function App() {
   const [paso, setPaso] = useState(1);
   const [intentos, setIntentos] = useState(0);
   const [posicionNo, setPosicionNo] = useState({ x: 0, y: 0 });
-  const [enviando, setEnviando] = useState(false);
-  const [error, setError] = useState("");
   const [datos, setDatos] = useState({
     fecha: "",
     hora: "",
@@ -44,10 +39,12 @@ function App() {
 
   const moverNo = () => {
     const limiteX = Math.min(window.innerWidth * 0.22, 170);
+
     setPosicionNo({
       x: Math.round(Math.random() * limiteX * 2 - limiteX),
       y: Math.round(Math.random() * 150 - 75),
     });
+
     setIntentos((valor) => valor + 1);
   };
 
@@ -62,6 +59,7 @@ function App() {
       alert("Selecciona una fecha y una hora.");
       return;
     }
+
     setPaso(4);
   };
 
@@ -70,50 +68,12 @@ function App() {
       alert("Selecciona una opción de comida.");
       return;
     }
+
     setPaso(5);
   };
 
-  const enviar = async () => {
-   window.open(
-"https://forms.gle/p4zAP5eJ1TBhoDhG6",
-"_blank"
-);
- 
-setPaso(6);
-};
-          title: "Nueva respuesta a la invitación",
-name: "Invitación",
-email: "nquirogat@gmail.com",
-fecha: formatearFecha(datos.fecha),
-hora: datos.hora,
-comida: datos.comida,
-comentario: datos.comentario || "Sin comentario",
-},
-{
-publicKey: PUBLIC_KEY,
-}
-      );
-
-      if (respuesta.status !== 200) {
-        throw new Error(`EmailJS respondió con estado ${respuesta.status}`);
-      }
-
-      setPaso(6);
-    } catch (fallo) {
-      console.error("Error de EmailJS:", fallo);
-      const detalle = fallo?.text || fallo?.message || String(fallo);
-      setError(`No se pudo enviar: ${detalle}`);
-    } finally {
-      setEnviando(false);
-    }
-  };
-
-  const reiniciar = () => {
-    setPaso(1);
-    setIntentos(0);
-    setPosicionNo({ x: 0, y: 0 });
-    setError("");
-    setDatos({ fecha: "", hora: "", comida: "", comentario: "" });
+  const abrirFormulario = () => {
+    window.location.href = GOOGLE_FORM_URL;
   };
 
   if (paso === 1) {
@@ -154,17 +114,25 @@ publicKey: PUBLIC_KEY,
       <Pagina>
         <Etiqueta texto="PASO 1 DE 4" />
         <h1 style={estilos.titulo}>Excelente decisión 🎉</h1>
-        <p style={estilos.subtitulo}>Análisis extremadamente serio y completamente imparcial.</p>
+        <p style={estilos.subtitulo}>
+          Análisis extremadamente serio y completamente imparcial.
+        </p>
 
         <div style={estilos.compatibilidad}>
-          <div style={estilos.compatibilidadTexto}>COMPATIBILIDAD DETECTADA</div>
+          <div style={estilos.compatibilidadTexto}>
+            COMPATIBILIDAD DETECTADA
+          </div>
           <div style={estilos.porcentaje}>99.9%</div>
           <div style={estilos.barraFondo}>
             <div style={estilos.barraLlena} />
           </div>
         </div>
 
-        <button type="button" style={estilos.botonPrincipal} onClick={() => setPaso(3)}>
+        <button
+          type="button"
+          style={estilos.botonPrincipal}
+          onClick={() => setPaso(3)}
+        >
           Organizar la salida →
         </button>
       </Pagina>
@@ -176,7 +144,9 @@ publicKey: PUBLIC_KEY,
       <Pagina>
         <Etiqueta texto="PASO 2 DE 4" />
         <h1 style={estilos.titulo}>Elige cuándo 📅</h1>
-        <p style={estilos.subtitulo}>Selecciona la fecha y la hora que más te acomoden.</p>
+        <p style={estilos.subtitulo}>
+          Selecciona la fecha y la hora que más te acomoden.
+        </p>
 
         <div style={estilos.formulario}>
           <label style={estilos.label}>Fecha</label>
@@ -184,7 +154,9 @@ publicKey: PUBLIC_KEY,
             type="date"
             min={fechaMinima}
             value={datos.fecha}
-            onChange={(e) => setDatos({ ...datos, fecha: e.target.value })}
+            onChange={(evento) =>
+              setDatos({ ...datos, fecha: evento.target.value })
+            }
             style={estilos.input}
           />
 
@@ -192,12 +164,17 @@ publicKey: PUBLIC_KEY,
           <input
             type="time"
             value={datos.hora}
-            onChange={(e) => setDatos({ ...datos, hora: e.target.value })}
+            onChange={(evento) =>
+              setDatos({ ...datos, hora: evento.target.value })
+            }
             style={estilos.input}
           />
         </div>
 
-        <Navegacion volver={() => setPaso(2)} continuar={continuarFecha} />
+        <Navegacion
+          volver={() => setPaso(2)}
+          continuar={continuarFecha}
+        />
       </Pagina>
     );
   }
@@ -217,7 +194,9 @@ publicKey: PUBLIC_KEY,
               onClick={() => setDatos({ ...datos, comida })}
               style={{
                 ...estilos.opcion,
-                ...(datos.comida === comida ? estilos.opcionSeleccionada : {}),
+                ...(datos.comida === comida
+                  ? estilos.opcionSeleccionada
+                  : {}),
               }}
             >
               {comida}
@@ -225,39 +204,9 @@ publicKey: PUBLIC_KEY,
           ))}
         </div>
 
-        <Navegacion volver={() => setPaso(3)} continuar={continuarComida} />
-      </Pagina>
-    );
-  }
-
-  if (paso === 5) {
-    return (
-      <Pagina>
-        <Etiqueta texto="PASO 4 DE 4" />
-        <h1 style={estilos.titulo}>Revisemos el plan</h1>
-
-        <div style={estilos.resumen}>
-          <div><strong>📅 Fecha:</strong> {formatearFecha(datos.fecha)}</div>
-          <div><strong>⏰ Hora:</strong> {datos.hora}</div>
-          <div><strong>🍽️ Comida:</strong> {datos.comida}</div>
-        </div>
-
-        <label style={estilos.label}>Comentario opcional</label>
-        <textarea
-          rows="4"
-          value={datos.comentario}
-          onChange={(e) => setDatos({ ...datos, comentario: e.target.value })}
-          placeholder="Restricciones alimentarias, preferencia de lugar u otro detalle."
-          style={{ ...estilos.input, resize: "vertical" }}
-        />
-
-        {error && <p style={estilos.error}>{error}</p>}
-
         <Navegacion
-          volver={() => setPaso(4)}
-          continuar={enviar}
-          texto={enviando ? "Enviando..." : "Confirmar y enviar 💌"}
-          deshabilitado={enviando}
+          volver={() => setPaso(3)}
+          continuar={continuarComida}
         />
       </Pagina>
     );
@@ -265,18 +214,42 @@ publicKey: PUBLIC_KEY,
 
   return (
     <Pagina>
-      <div style={{ fontSize: 64 }}>🎉</div>
-      <h1 style={estilos.titulo}>¡Tenemos una salida!</h1>
-      <p style={estilos.subtitulo}>La respuesta fue enviada correctamente a tu correo.</p>
+      <Etiqueta texto="PASO 4 DE 4" />
+      <h1 style={estilos.titulo}>Revisemos el plan</h1>
+
       <div style={estilos.resumen}>
-        <div><strong>📅 Fecha:</strong> {formatearFecha(datos.fecha)}</div>
-        <div><strong>⏰ Hora:</strong> {datos.hora}</div>
-        <div><strong>🍽️ Comida:</strong> {datos.comida}</div>
-        {datos.comentario && <div><strong>💬 Comentario:</strong> {datos.comentario}</div>}
+        <div>
+          <strong>📅 Fecha:</strong> {formatearFecha(datos.fecha)}
+        </div>
+        <div>
+          <strong>⏰ Hora:</strong> {datos.hora}
+        </div>
+        <div>
+          <strong>🍽️ Comida:</strong> {datos.comida}
+        </div>
       </div>
-      <button type="button" style={estilos.botonSecundario} onClick={reiniciar}>
-        Comenzar nuevamente
-      </button>
+
+      <label style={estilos.label}>Comentario opcional</label>
+      <textarea
+        rows="4"
+        value={datos.comentario}
+        onChange={(evento) =>
+          setDatos({ ...datos, comentario: evento.target.value })
+        }
+        placeholder="Restricciones alimentarias, preferencia de lugar u otro detalle."
+        style={{ ...estilos.input, resize: "vertical" }}
+      />
+
+      <p style={estilos.aviso}>
+        Al continuar se abrirá el formulario de Google. Completa ahí los datos
+        para que la respuesta quede guardada en Google Sheets.
+      </p>
+
+      <Navegacion
+        volver={() => setPaso(4)}
+        continuar={abrirFormulario}
+        texto="Continuar al formulario 💌"
+      />
     </Pagina>
   );
 }
@@ -293,17 +266,21 @@ function Etiqueta({ texto }) {
   return <div style={estilos.etiqueta}>{texto}</div>;
 }
 
-function Navegacion({ volver, continuar, texto = "Continuar →", deshabilitado = false }) {
+function Navegacion({ volver, continuar, texto = "Continuar →" }) {
   return (
     <div style={estilos.navegacion}>
-      <button type="button" style={estilos.botonSecundario} onClick={volver}>
-        ← Volver
-      </button>
       <button
         type="button"
-        style={{ ...estilos.botonPrincipal, opacity: deshabilitado ? 0.6 : 1 }}
+        style={estilos.botonSecundario}
+        onClick={volver}
+      >
+        ← Volver
+      </button>
+
+      <button
+        type="button"
+        style={estilos.botonPrincipal}
         onClick={continuar}
-        disabled={deshabilitado}
       >
         {texto}
       </button>
@@ -494,12 +471,9 @@ const estilos = {
     textAlign: "left",
     lineHeight: 2,
   },
-  error: {
-    marginTop: 16,
-    padding: 12,
-    color: "#991b1b",
-    background: "#fee2e2",
-    borderRadius: 12,
+  aviso: {
+    margin: "18px 0 0",
+    color: "#6b7280",
     fontSize: 14,
     lineHeight: 1.5,
   },
