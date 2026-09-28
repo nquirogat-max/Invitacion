@@ -1,12 +1,7 @@
 import { useRef, useState } from "react";
 
-const GOOGLE_FORM_ACTION =
-  "https://docs.google.com/forms/d/e/1FAIpQLSejHaUEvXkmq3vNRFaA7iPwln_Yoa_wcyTEbnJFhFTAbHO11A/formResponse";
-
-const FIELD_FECHA = "entry.1825252071";
-const FIELD_HORA = "entry.1034162459";
-const FIELD_COMIDA = "entry.1442532259";
-const FIELD_COMENTARIO = "entry.489695332";
+const APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbwhZoIPohi7dJB1C_BHf65_1nf1IHmpZYUTcF-V7c9fsJYf72jVqhYLQVL5pDAN8MXtHQ/exec";
 
 const comidas = [
   "Sushi 🍣",
@@ -33,6 +28,7 @@ function App() {
   const [paso, setPaso] = useState(1);
   const [intentos, setIntentos] = useState(0);
   const [posicionNo, setPosicionNo] = useState({ x: 0, y: 0 });
+  const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [datos, setDatos] = useState({
     fecha: "",
@@ -83,9 +79,16 @@ function App() {
   };
 
   const enviarRespuesta = () => {
-    if (!formRef.current) return;
+    if (!formRef.current || enviando) return;
 
+    setEnviando(true);
     formRef.current.submit();
+  };
+
+  const confirmarCarga = () => {
+    if (!enviando) return;
+
+    setEnviando(false);
     setEnviado(true);
   };
 
@@ -93,6 +96,7 @@ function App() {
     setPaso(1);
     setIntentos(0);
     setPosicionNo({ x: 0, y: 0 });
+    setEnviando(false);
     setEnviado(false);
     setDatos({
       fecha: "",
@@ -108,7 +112,7 @@ function App() {
         <div style={{ fontSize: 64 }}>🎉</div>
         <h1 style={estilos.titulo}>¡Tenemos una salida!</h1>
         <p style={estilos.subtitulo}>
-          La respuesta fue enviada al formulario conectado con Google Sheets.
+          La respuesta fue procesada por el registro conectado a Google Sheets.
         </p>
 
         <Resumen datos={datos} formatearFecha={formatearFecha} />
@@ -280,47 +284,34 @@ function App() {
 
       <form
         ref={formRef}
-        action={GOOGLE_FORM_ACTION}
+        action={APPS_SCRIPT_URL}
         method="POST"
-        target="google-form-frame"
+        target="respuesta-oculta"
         style={{ display: "none" }}
       >
+        <input type="hidden" name="fecha" value={datos.fecha} readOnly />
+        <input type="hidden" name="hora" value={datos.hora} readOnly />
+        <input type="hidden" name="comida" value={datos.comida} readOnly />
         <input
           type="hidden"
-          name={FIELD_FECHA}
-          value={datos.fecha}
-          readOnly
-        />
-        <input
-          type="hidden"
-          name={FIELD_HORA}
-          value={datos.hora}
-          readOnly
-        />
-        <input
-          type="hidden"
-          name={FIELD_COMIDA}
-          value={datos.comida}
-          readOnly
-        />
-        <input
-          type="hidden"
-          name={FIELD_COMENTARIO}
+          name="comentario"
           value={datos.comentario || "Sin comentario"}
           readOnly
         />
       </form>
 
       <iframe
-        title="google-form-frame"
-        name="google-form-frame"
+        title="respuesta-oculta"
+        name="respuesta-oculta"
         style={{ display: "none" }}
+        onLoad={confirmarCarga}
       />
 
       <Navegacion
         volver={() => setPaso(4)}
         continuar={enviarRespuesta}
-        texto="Confirmar y guardar 💌"
+        texto={enviando ? "Guardando..." : "Confirmar y guardar 💌"}
+        deshabilitado={enviando}
       />
     </Pagina>
   );
@@ -338,7 +329,12 @@ function Etiqueta({ texto }) {
   return <div style={estilos.etiqueta}>{texto}</div>;
 }
 
-function Navegacion({ volver, continuar, texto = "Continuar →" }) {
+function Navegacion({
+  volver,
+  continuar,
+  texto = "Continuar →",
+  deshabilitado = false,
+}) {
   return (
     <div style={estilos.navegacion}>
       <button
@@ -351,8 +347,12 @@ function Navegacion({ volver, continuar, texto = "Continuar →" }) {
 
       <button
         type="button"
-        style={estilos.botonPrincipal}
+        style={{
+          ...estilos.botonPrincipal,
+          opacity: deshabilitado ? 0.65 : 1,
+        }}
         onClick={continuar}
+        disabled={deshabilitado}
       >
         {texto}
       </button>
