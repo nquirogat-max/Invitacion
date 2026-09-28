@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-const GOOGLE_FORM_URL = "https://forms.gle/p4zAP5eJ1TBhoDhG6";
+const GOOGLE_FORM_ACTION =
+  "https://docs.google.com/forms/d/e/1FAIpQLSejHaUEvXkmq3vNRFaA7iPwln_Yoa_wcyTEbnJFhFTAbHO11A/formResponse";
+
+const FIELD_FECHA = "entry.1825252071";
+const FIELD_HORA = "entry.1034162459";
+const FIELD_COMIDA = "entry.1442532259";
+const FIELD_COMENTARIO = "entry.489695332";
 
 const comidas = [
   "Sushi 🍣",
@@ -23,9 +29,11 @@ const mensajesNo = [
 ];
 
 function App() {
+  const formRef = useRef(null);
   const [paso, setPaso] = useState(1);
   const [intentos, setIntentos] = useState(0);
   const [posicionNo, setPosicionNo] = useState({ x: 0, y: 0 });
+  const [enviado, setEnviado] = useState(false);
   const [datos, setDatos] = useState({
     fecha: "",
     hora: "",
@@ -33,9 +41,11 @@ function App() {
     comentario: "",
   });
 
-  const hoy = new Date();
-  hoy.setMinutes(hoy.getMinutes() - hoy.getTimezoneOffset());
-  const fechaMinima = hoy.toISOString().slice(0, 10);
+  const fechaLocal = new Date();
+  fechaLocal.setMinutes(
+    fechaLocal.getMinutes() - fechaLocal.getTimezoneOffset()
+  );
+  const fechaMinima = fechaLocal.toISOString().slice(0, 10);
 
   const moverNo = () => {
     const limiteX = Math.min(window.innerWidth * 0.22, 170);
@@ -72,33 +82,79 @@ function App() {
     setPaso(5);
   };
 
-  const abrirFormulario = async () => {
-const formData = new FormData();
- 
-formData.append("entry.1825252071", datos.fecha);
-formData.append("entry.1034162459", datos.hora);
-formData.append("entry.1442532259", datos.comida);
-formData.append(
-"entry.489695332",
-datos.comentario || "Sin comentario"
-);
- 
-try {
-await fetch(
-"https://docs.google.com/forms/d/e/1FAIpQLSejHaUEvXkmq3vNRFaA7iPwln_Yoa_wcyTEbnJFhFTAbHO11A/formResponse",
-{
-method: "POST",
-mode: "no-cors",
-body: formData,
-}
-);
- 
-alert("✅ Respuesta enviada correctamente");
-} catch (error) {
-console.error(error);
-alert("❌ Error enviando respuesta");
-}
-};
+  const enviarRespuesta = () => {
+    if (!formRef.current) return;
+
+    formRef.current.submit();
+    setEnviado(true);
+  };
+
+  const reiniciar = () => {
+    setPaso(1);
+    setIntentos(0);
+    setPosicionNo({ x: 0, y: 0 });
+    setEnviado(false);
+    setDatos({
+      fecha: "",
+      hora: "",
+      comida: "",
+      comentario: "",
+    });
+  };
+
+  if (enviado) {
+    return (
+      <Pagina>
+        <div style={{ fontSize: 64 }}>🎉</div>
+        <h1 style={estilos.titulo}>¡Tenemos una salida!</h1>
+        <p style={estilos.subtitulo}>
+          La respuesta fue enviada al formulario conectado con Google Sheets.
+        </p>
+
+        <Resumen datos={datos} formatearFecha={formatearFecha} />
+
+        <button
+          type="button"
+          style={estilos.botonSecundario}
+          onClick={reiniciar}
+        >
+          Comenzar nuevamente
+        </button>
+      </Pagina>
+    );
+  }
+
+  if (paso === 1) {
+    return (
+      <Pagina>
+        <Etiqueta texto="TENGO ALGO QUE PREGUNTARTE" />
+        <h1 style={estilos.titulo}>Pregunta importante</h1>
+        <p style={estilos.pregunta}>¿Te gustaría salir conmigo?</p>
+
+        <div style={estilos.zonaBotones}>
+          <button
+            type="button"
+            style={{ ...estilos.botonPrincipal, background: "#16a34a" }}
+            onClick={() => setPaso(2)}
+          >
+            Sí 😊
+          </button>
+
+          <button
+            type="button"
+            onMouseEnter={moverNo}
+            onTouchStart={moverNo}
+            onClick={moverNo}
+            style={{
+              ...estilos.botonNo,
+              transform: `translate(${posicionNo.x}px, ${posicionNo.y}px)`,
+            }}
+          >
+            {mensajesNo[Math.min(intentos, mensajesNo.length - 1)]}
+          </button>
+        </div>
+      </Pagina>
+    );
   }
 
   if (paso === 2) {
@@ -209,17 +265,7 @@ alert("❌ Error enviando respuesta");
       <Etiqueta texto="PASO 4 DE 4" />
       <h1 style={estilos.titulo}>Revisemos el plan</h1>
 
-      <div style={estilos.resumen}>
-        <div>
-          <strong>📅 Fecha:</strong> {formatearFecha(datos.fecha)}
-        </div>
-        <div>
-          <strong>⏰ Hora:</strong> {datos.hora}
-        </div>
-        <div>
-          <strong>🍽️ Comida:</strong> {datos.comida}
-        </div>
-      </div>
+      <Resumen datos={datos} formatearFecha={formatearFecha} />
 
       <label style={estilos.label}>Comentario opcional</label>
       <textarea
@@ -232,15 +278,49 @@ alert("❌ Error enviando respuesta");
         style={{ ...estilos.input, resize: "vertical" }}
       />
 
-      <p style={estilos.aviso}>
-        Al continuar se abrirá el formulario de Google. Completa ahí los datos
-        para que la respuesta quede guardada en Google Sheets.
-      </p>
+      <form
+        ref={formRef}
+        action={GOOGLE_FORM_ACTION}
+        method="POST"
+        target="google-form-frame"
+        style={{ display: "none" }}
+      >
+        <input
+          type="hidden"
+          name={FIELD_FECHA}
+          value={datos.fecha}
+          readOnly
+        />
+        <input
+          type="hidden"
+          name={FIELD_HORA}
+          value={datos.hora}
+          readOnly
+        />
+        <input
+          type="hidden"
+          name={FIELD_COMIDA}
+          value={datos.comida}
+          readOnly
+        />
+        <input
+          type="hidden"
+          name={FIELD_COMENTARIO}
+          value={datos.comentario || "Sin comentario"}
+          readOnly
+        />
+      </form>
+
+      <iframe
+        title="google-form-frame"
+        name="google-form-frame"
+        style={{ display: "none" }}
+      />
 
       <Navegacion
         volver={() => setPaso(4)}
-        continuar={abrirFormulario}
-        texto="Continuar al formulario 💌"
+        continuar={enviarRespuesta}
+        texto="Confirmar y guardar 💌"
       />
     </Pagina>
   );
@@ -276,6 +356,27 @@ function Navegacion({ volver, continuar, texto = "Continuar →" }) {
       >
         {texto}
       </button>
+    </div>
+  );
+}
+
+function Resumen({ datos, formatearFecha }) {
+  return (
+    <div style={estilos.resumen}>
+      <div>
+        <strong>📅 Fecha:</strong> {formatearFecha(datos.fecha)}
+      </div>
+      <div>
+        <strong>⏰ Hora:</strong> {datos.hora}
+      </div>
+      <div>
+        <strong>🍽️ Comida:</strong> {datos.comida}
+      </div>
+      {datos.comentario && (
+        <div>
+          <strong>💬 Comentario:</strong> {datos.comentario}
+        </div>
+      )}
     </div>
   );
 }
@@ -462,12 +563,6 @@ const estilos = {
     borderRadius: 17,
     textAlign: "left",
     lineHeight: 2,
-  },
-  aviso: {
-    margin: "18px 0 0",
-    color: "#6b7280",
-    fontSize: 14,
-    lineHeight: 1.5,
   },
 };
 
